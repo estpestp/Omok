@@ -3,8 +3,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const PORT = Number(process.env.PORT || 10000);
-const API_KEY = process.env.GROK_API_KEY;
-const MODEL = process.env.GROK_MODEL || 'grok-4.7';
+const API_KEY = process.env.GROQ_API_KEY;
+const MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 const INDEX = path.join(__dirname, 'index.html');
 
 function send(res, status, body, type = 'application/json; charset=utf-8') {
@@ -39,11 +39,11 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (req.method === 'GET' && url.pathname === '/health') {
-    return send(res, 200, { ok: true, grokConfigured: Boolean(API_KEY) });
+    return send(res, 200, { ok: true, groqConfigured: Boolean(API_KEY) });
   }
 
   if (req.method === 'POST' && url.pathname === '/api/explain') {
-    if (!API_KEY) return send(res, 503, { error: 'Grok API 키가 아직 설정되지 않았어. Render 환경 변수에 GROK_API_KEY를 추가해 줘.' });
+    if (!API_KEY) return send(res, 503, { error: 'Groq API 키가 아직 설정되지 않았어. Render 환경 변수에 GROK_API_KEY를 추가해 줘.' });
     let body;
     try { body = await readJson(req); }
     catch (err) { return send(res, 400, { error: err.message }); }
@@ -81,7 +81,7 @@ const server = http.createServer(async (req, res) => {
     ].join('\n');
 
     try {
-      const response = await fetch('https://api.x.ai/v1/chat/completions', {
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -97,27 +97,27 @@ const server = http.createServer(async (req, res) => {
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        const message = data?.error?.message || data?.message || 'Grok API 요청이 실패했어.';
+        const message = data?.error?.message || data?.message || 'Groq API 요청이 실패했어.';
         const status = response.status === 401 || response.status === 403 ? 502 : response.status === 429 ? 429 : 502;
-        console.error('Grok API error:', response.status, message);
+        console.error('Groq API error:', response.status, message);
         return send(res, status, { error: response.status === 401 || response.status === 403
-          ? 'Grok API 인증에 실패했어. Render의 GROK_API_KEY를 확인해 줘.'
+          ? 'Groq API 인증에 실패했어. Render의 GROK_API_KEY를 확인해 줘.'
           : response.status === 429
-            ? 'Grok API 사용 한도에 도달했어. 잠시 후 다시 시도해 줘.'
-            : 'Grok API에서 응답을 받지 못했어. Render 로그를 확인해 줘.' });
+            ? 'Groq API 사용 한도에 도달했어. 잠시 후 다시 시도해 줘.'
+            : 'Groq API에서 응답을 받지 못했어. Render 로그를 확인해 줘.' });
       }
       const explanation = data?.choices?.[0]?.message?.content;
       if (typeof explanation !== 'string' || !explanation.trim()) {
-        return send(res, 502, { error: 'Grok이 설명을 반환하지 않았어. 모델 설정을 확인해 줘.' });
+        return send(res, 502, { error: 'Groq이 설명을 반환하지 않았어. 모델 설정을 확인해 줘.' });
       }
       return send(res, 200, { explanation: explanation.trim(), model: MODEL });
     } catch (err) {
-      console.error('Grok request failed:', err.message);
-      return send(res, 502, { error: err.name === 'TimeoutError' ? 'Grok 응답이 오래 걸려서 중단했어. 다시 시도해 줘.' : 'Grok에 연결하지 못했어. 네트워크와 API 설정을 확인해 줘.' });
+      console.error('Groq request failed:', err.message);
+      return send(res, 502, { error: err.name === 'TimeoutError' ? 'Groq 응답이 오래 걸려서 중단했어. 다시 시도해 줘.' : 'Groq에 연결하지 못했어. 네트워크와 API 설정을 확인해 줘.' });
     }
   }
 
   return send(res, 404, { error: '찾을 수 없는 주소야.' });
 });
 
-server.listen(PORT, '0.0.0.0', () => console.log(`Omok server listening on ${PORT}; Grok key configured: ${Boolean(API_KEY)}`));
+server.listen(PORT, '0.0.0.0', () => console.log(`Omok server listening on ${PORT}; Groq key configured: ${Boolean(API_KEY)}`));
