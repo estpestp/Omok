@@ -4,7 +4,7 @@ const path = require('node:path');
 
 const PORT = Number(process.env.PORT || 10000);
 const API_KEY = process.env.GROK_API_KEY;
-const MODEL = process.env.GROK_MODEL || 'grok-3-mini';
+const MODEL = process.env.GROK_MODEL || 'grok-4.7';
 const INDEX = path.join(__dirname, 'index.html');
 
 function send(res, status, body, type = 'application/json; charset=utf-8') {
