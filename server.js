@@ -43,7 +43,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (req.method === 'POST' && url.pathname === '/api/explain') {
-    if (!API_KEY) return send(res, 503, { error: 'Groq API 키가 아직 설정되지 않았어. Render 환경 변수에 GROK_API_KEY를 추가해 줘.' });
+    if (!API_KEY) return send(res, 503, { error: 'Groq API 키가 아직 설정되지 않았어. Render 환경 변수에 GROQ_API_KEY를 추가해 줘.' });
     let body;
     try { body = await readJson(req); }
     catch (err) { return send(res, 400, { error: err.message }); }
@@ -101,7 +101,7 @@ const server = http.createServer(async (req, res) => {
         const status = response.status === 401 || response.status === 403 ? 502 : response.status === 429 ? 429 : 502;
         console.error('Groq API error:', response.status, message);
         return send(res, status, { error: response.status === 401 || response.status === 403
-          ? 'Groq API 인증에 실패했어. Render의 GROK_API_KEY를 확인해 줘.'
+          ? 'Groq API 인증에 실패했어. Render의 GROQ_API_KEY를 확인해 줘.'
           : response.status === 429
             ? 'Groq API 사용 한도에 도달했어. 잠시 후 다시 시도해 줘.'
             : 'Groq API에서 응답을 받지 못했어. Render 로그를 확인해 줘.' });
